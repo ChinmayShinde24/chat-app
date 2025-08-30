@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# Env files (if you keep React/Vite envs here)
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
