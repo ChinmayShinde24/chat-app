@@ -6,11 +6,21 @@ import ProfilePage from "./pages/ProfilePage";
 import { Toaster } from "react-hot-toast";
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
+import BgImage from "./assets/bgImage.svg";
 
 const App = () => {
   const { authUser } = useContext(AuthContext);
+
   return (
-    <div className="bg-[url('./src/assets/bgImage.svg')] bg-contain">
+    <div className="relative">
+      {/* Background Image */}
+      <img
+        src={BgImage}
+        alt="Background"
+        className="absolute object-contain"
+      />
+
+      {/* App Content */}
       <Toaster />
       <Routes>
         <Route
@@ -23,7 +33,7 @@ const App = () => {
         />
         <Route
           path="/profile"
-          element={authUser ? <ProfilePage /> : <Navigate to="/login " />}
+          element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
         />
       </Routes>
     </div>
