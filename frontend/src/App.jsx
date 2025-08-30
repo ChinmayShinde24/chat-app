@@ -12,30 +12,40 @@ const App = () => {
   const { authUser } = useContext(AuthContext);
 
   return (
-    <div className="relative">
+    <div className="relative min-h-screen">
       {/* Background Image */}
-      <img
-        src={BgImage}
-        alt="Background"
-        className="absolute object-contain"
-      />
+      <div className="fixed inset-0 -z-10 w-full h-full">
+        <img
+          src={BgImage}
+          alt="Background"
+          className="w-full h-full object-cover md:object-cover"
+          style={{
+            minHeight: "100vh",
+            minWidth: "100vw",
+            objectFit: "cover",
+            objectPosition: "center",
+          }}
+        />
+      </div>
 
       {/* App Content */}
-      <Toaster />
-      <Routes>
-        <Route
-          path="/"
-          element={authUser ? <HomePage /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/login"
-          element={!authUser ? <LoginPage /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/profile"
-          element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
-        />
-      </Routes>
+      <div className="relative z-10">
+        <Toaster />
+        <Routes>
+          <Route
+            path="/"
+            element={authUser ? <HomePage /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/login"
+            element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/profile"
+            element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+          />
+        </Routes>
+      </div>
     </div>
   );
 };
