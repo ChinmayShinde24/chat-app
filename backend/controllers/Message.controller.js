@@ -58,45 +58,28 @@ export const getMessage = async (req, res) => {
 //Mark msg as seen
 export const marksMessageAsSeen = async (req, res) => {
   try {
-    const { id } = req.params;
-    await Message.findByIdAndUpdate(id, { seen: true });
-    res.json({ success: true });
+    const { id } = req.params; // messageId
+    const message = await Message.findById(id);
+
+    if (!message) return res.status(404).json({ success: false, message: "Message not found" });
+
+    if (message.status !== "read") {
+      message.status = "read";
+      message.readAt = new Date();
+      await message.save();
+    }
+
+    res.json({ success: true, message: "Message marked as read", data: message });
   } catch (err) {
-    console.log("Error while seeing the marked message : ", err);
-    res.json({ success: false, message: err.message });
+    console.error("Error in markAsRead:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
-
-// export const marksMessageAsSeen = async (req, res) => {
-//     try {
-//       const { id } = req.params; // message id
-//       const myId = req.user._id; // current logged in user
-
-//       // Check if message exists
-//       const message = await Message.findById(id);
-//       if (!message) {
-//         return res.json({ success: false, message: "Message not found" });
-//       }
-
-//       // (Optional but good) check if user is authorized to see this message
-//       if (message.receiver.toString() !== myId.toString()) {
-//         return res.json({ success: false, message: "Not authorized to mark this message" });
-//       }
-
-//       // Update seen flag
-//       await Message.findByIdAndUpdate(id, { seen: true });
-
-//       res.json({ success: true });
-//     } catch (err) {
-//       console.log("Error while seeing the marked message : ", err);
-//       res.json({ success: false, message: err.message });
-//     }
-//   };
 
 //Send msg to selecetd user
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, replyTo } = req.body;
     const receiverId = req.params.id;
     const senderId = req.user._id;
     
@@ -110,6 +93,7 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageUrl,
+      replyTo: replyTo || null
     });
 
     //Emit new msg to the receiver socket
@@ -121,5 +105,69 @@ export const sendMessage = async (req, res) => {
   } catch (err) {
     console.log("Error in sending a message :", err);
     res.json({ success: false, message: err.message });
+  }
+};
+
+export const deleteForMe = async(req,res) => {
+  try{
+
+    const {id} = req.params
+    const userId = req.user._id
+
+    const message = await Message.findById(id)
+    if (!message) return res.status(404).json({success:false,message:'Message not found'})
+
+    if(!message.deletedBy.includes(userId)){
+      message.deletedBy.push(userId)
+      await message.save()
+    }
+
+    res.json({success:false, message:'Message deleted for you'})
+
+  }catch(error){
+    console.log('Error while deleting the message : ', error)
+    return res.send({success:false, message:error.message})
+  }
+}
+
+export const deleteForAll = async(req,res) => {
+  try{
+
+    const {id} = req.params
+    const userId = req.user._id
+
+    const message = await Message.findById(id)
+    if(!message) return res.json({status:404, message:'Message does not exist'})
+
+    message.text = 'This message is deleted'
+    message.image = null
+    message.deletedForAll = true
+    await message.save()
+
+    res.json({success:true,message:'Message deleted for everyone :', data:message})
+
+  }catch(error){
+    console.log('Errror while deleting the messagw from all the users :', error)
+    return res.json({status:false, message:error.message})
+  }
+}
+
+export const markAsDelivered = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const message = await Message.findById(id);
+
+    if (!message) return res.status(404).json({ success: false, message: "Message not found" });
+
+    if (message.status === "sent") {
+      message.status = "delivered";
+      message.deliveredAt = new Date();
+      await message.save();
+    }
+
+    res.json({ success: true, message: "Message marked as delivered", data: message });
+  } catch (err) {
+    console.error("Error in markAsDelivered:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

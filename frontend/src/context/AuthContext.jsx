@@ -15,7 +15,8 @@ export const AuthProvider = ({ children }) => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       // Set axios default headers if token exists
-      axios.defaults.headers.common["token"] = storedToken;
+      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+
     }
     return storedToken || null;
   });
@@ -34,7 +35,8 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Ensure axios headers are set before making the request
-      axios.defaults.headers.common["token"] = storedToken;
+      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+
       const { data } = await axios.get("/api/auth/check");
       if (data.success) {
         setAuthUser(data.user);

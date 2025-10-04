@@ -18,9 +18,39 @@ const messageSchema = new mongoose.Schema(
     image: {
       type: String,
     },
-    seen: {
+
+    // ✅ Reply support
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
+
+    // ✅ Delete support
+    deletedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    deletedForAll: {
       type: Boolean,
       default: false,
+    },
+
+    // ✅ Delivery / Read Receipts
+    status: {
+      type: String,
+      enum: ["sent", "delivered", "read"],
+      default: "sent",
+    },
+    deliveredAt: {
+      type: Date,
+      default: null,
+    },
+    readAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

@@ -5,6 +5,7 @@ import { useContext } from "react";
 import { ChatContext } from "../context/ChatContext";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import EmojiPicker from "emoji-picker-react";
 
 const ChatContainer = ({ onToggleRightSidebar }) => {
   const { selectedUser, setSelectedUser, message, sendMessage, getMessages } =
@@ -13,12 +14,20 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
   const scrollEnd = useRef();
   const [input, setInput] = useState("");
   const [showRightSidebar, setShowRightSidebar] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+
   const isMobile = window.innerWidth < 768; // md breakpoint
 
   // Toggle right sidebar visibility
   const toggleRightSidebar = () => {
     setShowRightSidebar(!showRightSidebar);
   };
+
+  //Emoji
+  const handleEmojiClick = (emoji) => {
+    setInput((prev) => prev + emoji.emoji)
+    setShowEmojiPicker(false)
+  }
 
   // Handle send message
   const handleSendMessage = async (e) => {
@@ -91,7 +100,7 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
 
       {/* Chat Body */}
       <div className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6">
-        {console.log("authuser", authUser)},
+        {/* {console.log("authuser", authUser)}, */}
         {Array.isArray(message) && message.length > 0 ? (
           message.map((msg, index) => {
             const isCurrentUser = msg.senderId === authUser._id;
@@ -167,6 +176,17 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
       {/* Bottom area */}
       <div className="absolute bottom-0 left-0 right-0 bg-[#1e1e2d] border-t border-gray-700 p-3">
         <div className="flex items-center gap-3 bg-[#2a2b3c] rounded-full px-4 py-2">
+        <div className="flex items-center gap-2 relative">
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="cursor-pointer p-1 hover:bg-gray-600 rounded-full"
+            >
+              😊
+            </button>
+
+            {showEmojiPicker && <EmojiPicker onEmojiClick={handleEmojiClick} />}
+          </div>
+
           <input
             onChange={(e) => setInput(e.target.value)}
             value={input}
