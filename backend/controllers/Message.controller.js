@@ -122,7 +122,7 @@ export const deleteForMe = async(req,res) => {
       await message.save()
     }
 
-    res.json({success:false, message:'Message deleted for you'})
+    res.json({success:true, message:'Message deleted for you'})
 
   }catch(error){
     console.log('Error while deleting the message : ', error)
@@ -143,6 +143,12 @@ export const deleteForAll = async(req,res) => {
     message.image = null
     message.deletedForAll = true
     await message.save()
+    const receiverId = message.receiverId
+    const senderSocketId = message.senderId
+    const receiverSocketId = userSocketMap[receiverId]
+
+    if (senderSocketId) io.to(senderSocketId).emit("messageDeletedForAll", message);
+    if (receiverSocketId) io.to(receiverSocketId).emit("messageDeletedForAll", message);
 
     res.json({success:true,message:'Message deleted for everyone :', data:message})
 

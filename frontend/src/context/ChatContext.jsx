@@ -96,35 +96,58 @@ export const ChatProvider = ({ children }) => {
     return () => unSubscribeFromMessage();
   }, [socket, selectedUser]);
 
-  //delete for me
+  //delete for me 
   const deleteMessageForMe = async (messageId) => {
     try {
-      const { data } = axios.delete(`api/messages/delete/me/${messageId}`);
-      console.log('Data while deleteing the message: ', data);
+      const { data } = await axios.delete(`api/messages/delete/me/${messageId}`);
+      console.log('Data while deleting the message: ', data);
       if (data.success) {
         setMessage((prev) => prev.filter((msg) => msg._id !== messageId));
+        return { success: true };
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error('Error deleting message for me:', error);
+      throw new Error(error.response?.data?.message || 'Failed to delete message');
     }
   };
 
+  // Delete for everyone
+  useEffect(() => {
+    if (!socket) return;
+  
+    socket.on("messageDeletedForAll", (deletedMessage) => {
+      setMessage((prev) =>
+        prev.map((msg) =>
+          msg._id === deletedMessage._id
+            ? { ...msg, text: "This message is deleted", image: null }
+            : msg
+        )
+      );
+    });
+  
+    // Cleanup listener on unmount
+    return () => {
+      socket.off("messageDeletedForAll");
+    };
+  }, [socket]);
+ 
   const deleteMessageForAll = async (messageId) => {
     try {
-      const { data } = axios.delete(`api/message/delete/all/${messageId}`);
-      console.log('Data while deleting message for all :', data);
+      const { data } = await axios.delete(`api/messages/delete/all/${messageId}`);
+      console.log('Data while deleting message for all:', data);
       if (data.success) {
-        setMessage((prev) => {
-          prev.map((msg) => {
-            msg._id === messageId
-              ? { ...msg, text: 'This is message is deleted', image: null }
-              : msg;
-          });
-        });
-        toast.success('Message deleted fr everyone');
+        setMessage((prev) => 
+          prev.map((msg) => 
+            msg._id === messageId 
+              ? { ...msg, text: 'This message has been deleted', image: null, isDeleted: true }
+              : msg
+          )
+        );
+        return { success: true };
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error('Error deleting message for all:', error);
+      throw new Error(error.response?.data?.message || 'Failed to delete message for everyone');
     }
   };
 

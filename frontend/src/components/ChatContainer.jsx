@@ -41,24 +41,28 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
     setInput('');
   };
 
-  // Delete message functions
-  const deleteMessageForMe = async (messageId) => {
+  // Get delete functions from context
+  const { deleteMessageForMe, deleteMessageForAll } = useContext(ChatContext);
+  
+  // Handle delete for me
+  const handleDeleteForMe = async (messageId) => {
     try {
-      // Implement your delete for me logic here
+      await deleteMessageForMe(messageId);
       toast.success('Message deleted for you');
     } catch (error) {
       console.error('Error deleting message:', error);
-      toast.error('Failed to delete message');
+      toast.error(error.message || 'Failed to delete message');
     }
   };
 
-  const deleteMessageForAll = async (messageId) => {
+  // Handle delete for everyone
+  const handleDeleteForAll = async (messageId) => {
     try {
-      // Implement your delete for everyone logic here
+      await deleteMessageForAll(messageId);
       toast.success('Message deleted for everyone');
     } catch (error) {
       console.error('Error deleting message:', error);
-      toast.error('Failed to delete message');
+      toast.error(error.message || 'Failed to delete message');
     }
   };
 
@@ -240,7 +244,7 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
                         <div className="flex flex-col gap-1">
                           <button
                             onClick={() => {
-                              deleteMessageForMe(selectedMessage._id);
+                              handleDeleteForMe(selectedMessage._id);
                               setShowDeleteDialog({ show: false, position: null });
                             }}
                             className="py-2 px-4 text-left text-white hover:bg-gray-700 rounded"
@@ -250,7 +254,7 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
                           {selectedMessage.senderId === authUser._id && (
                             <button
                               onClick={() => {
-                                deleteMessageForAll(selectedMessage._id);
+                                handleDeleteForAll(selectedMessage._id);
                                 setShowDeleteDialog({ show: false, position: null });
                               }}
                               className="py-2 px-4 text-left text-red-400 hover:bg-gray-700 rounded"
