@@ -1,20 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
-import assets, { messagesDummyData } from "../assets/assets";
-import { formatMessageTime } from "../lib/utils";
-import { useContext } from "react";
-import { ChatContext } from "../context/ChatContext";
-import { AuthContext } from "../context/AuthContext";
-import toast from "react-hot-toast";
-import EmojiPicker from "emoji-picker-react";
+import React, { useEffect, useRef, useState } from 'react';
+import assets, { messagesDummyData } from '../assets/assets';
+import { formatMessageTime } from '../lib/utils';
+import { useContext } from 'react';
+import { ChatContext } from '../context/ChatContext';
+import { AuthContext } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+import EmojiPicker from 'emoji-picker-react';
 
 const ChatContainer = ({ onToggleRightSidebar }) => {
   const { selectedUser, setSelectedUser, message, sendMessage, getMessages } =
     useContext(ChatContext);
   const { authUser, onlineUser } = useContext(AuthContext);
   const scrollEnd = useRef();
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [showRightSidebar, setShowRightSidebar] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  //states for delete message
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedMessage, setSelectedMesssage] = useState(null);
 
   const isMobile = window.innerWidth < 768; // md breakpoint
 
@@ -25,30 +29,88 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
 
   //Emoji
   const handleEmojiClick = (emoji) => {
-    setInput((prev) => prev + emoji.emoji)
-    setShowEmojiPicker(false)
-  }
+    setInput((prev) => prev + emoji.emoji);
+    setShowEmojiPicker(false);
+  };
 
   // Handle send message
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (input.trim() === "") return;
+    if (input.trim() === '') return;
     await sendMessage({ text: input.trim() });
-    setInput("");
+    setInput('');
   };
+
+  // Delete message functions
+  const deleteMessageForMe = async (messageId) => {
+    try {
+      // Implement your delete for me logic here
+      toast.success('Message deleted for you');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message');
+    }
+  };
+
+  const deleteMessageForAll = async (messageId) => {
+    try {
+      // Implement your delete for everyone logic here
+      toast.success('Message deleted for everyone');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message');
+    }
+  };
+
+  // Handle message hold
+  const handleMessageHold = (msg, event) => {
+    event.preventDefault();
+    setSelectedMesssage(msg);
+    
+    // Position the dialog near the message
+    const messageElement = event.currentTarget;
+    const rect = messageElement.getBoundingClientRect();
+    
+    // Store the position for the dialog
+    setShowDeleteDialog({
+      show: true,
+      position: {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width
+      }
+    });
+  };
+  
+  // Close dialog when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDeleteDialog.show && !event.target.closest('.delete-dialog')) {
+        setShowDeleteDialog({ show: false, position: null });
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showDeleteDialog]);
 
   // Handle image send
   const handleSendImage = async (e) => {
     const file = e.target.files[0];
-    if (!file || !file.type.startsWith("image/")) {
-      toast.error("Please select an image");
+    if (!file || !file.type.startsWith('image/')) {
+      toast.error('Please select an image');
       return;
     }
     const reader = new FileReader();
 
     reader.onloadend = async () => {
       await sendMessage({ image: reader.result });
-      e.target.value = "";
+      e.target.value = '';
     };
     reader.readAsDataURL(file);
   };
@@ -61,7 +123,7 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
 
   useEffect(() => {
     if (scrollEnd.current && message) {
-      scrollEnd.current.scrollIntoView({ behavior: "smooth" });
+      scrollEnd.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [message]);
 
@@ -107,8 +169,24 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
             return (
               <div
                 key={index}
+                onContextMenu={(e) => handleMessageHold(msg, e)}
+                onTouchStart={(e) => {
+                  // long press on mobile
+                  e.persist();
+                  const touch = e.touches[0];
+                  this.pressTimer = setTimeout(
+                    () => handleMessageHold(msg, { ...e, currentTarget: document.elementFromPoint(touch.clientX, touch.clientY) }),
+                    600
+                  );
+                }}
+                onTouchEnd={() => {
+                  clearTimeout(this.pressTimer);
+                }}
+                onTouchMove={() => {
+                  clearTimeout(this.pressTimer);
+                }}
                 className={`flex items-start gap-2 mb-4 ${
-                  isCurrentUser ? "justify-end" : "justify-start"
+                  isCurrentUser ? 'justify-end' : 'justify-start'
                 }`}
               >
                 {/* Avatar - Only show for received messages */}
@@ -125,7 +203,7 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
                 {/* Message Bubble */}
                 <div
                   className={`flex flex-col ${
-                    isCurrentUser ? "items-end" : "items-start"
+                    isCurrentUser ? 'items-end' : 'items-start'
                   }`}
                 >
                   {msg.image ? (
@@ -138,8 +216,8 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
                     <p
                       className={`p-3 max-w-[200px] md:text-sm font-light rounded-lg break-all ${
                         isCurrentUser
-                          ? "bg-violet-600 text-white rounded-br-none"
-                          : "bg-gray-200 text-gray-800 rounded-bl-none"
+                          ? 'bg-violet-600 text-white rounded-br-none'
+                          : 'bg-gray-200 text-gray-800 rounded-bl-none'
                       }`}
                     >
                       {msg.text}
@@ -148,6 +226,48 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
                   <span className="text-xs text-gray-500 mt-1">
                     {formatMessageTime(msg.createdAt)}
                   </span>
+
+                  {showDeleteDialog.show && selectedMessage && (
+                    <div 
+                      className="fixed z-50 delete-dialog"
+                      style={{
+                        left: `${showDeleteDialog.position?.x || 0}px`,
+                        top: `${(showDeleteDialog.position?.y || 0) - 60}px`,
+                        width: `${Math.max(showDeleteDialog.position?.width || 0, 200)}px`
+                      }}
+                    >
+                      <div className="bg-[#2a2b3c] p-2 rounded-lg shadow-xl w-full">
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() => {
+                              deleteMessageForMe(selectedMessage._id);
+                              setShowDeleteDialog({ show: false, position: null });
+                            }}
+                            className="py-2 px-4 text-left text-white hover:bg-gray-700 rounded"
+                          >
+                            Delete for Me
+                          </button>
+                          {selectedMessage.senderId === authUser._id && (
+                            <button
+                              onClick={() => {
+                                deleteMessageForAll(selectedMessage._id);
+                                setShowDeleteDialog({ show: false, position: null });
+                              }}
+                              className="py-2 px-4 text-left text-red-400 hover:bg-gray-700 rounded"
+                            >
+                              Delete for Everyone
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setShowDeleteDialog({ show: false, position: null })}
+                            className="py-2 px-4 text-left text-gray-300 hover:bg-gray-700 rounded"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Avatar - Only show for sent messages */}
@@ -176,7 +296,7 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
       {/* Bottom area */}
       <div className="absolute bottom-0 left-0 right-0 bg-[#1e1e2d] border-t border-gray-700 p-3">
         <div className="flex items-center gap-3 bg-[#2a2b3c] rounded-full px-4 py-2">
-        <div className="flex items-center gap-2 relative">
+          <div className="flex items-center gap-2 relative">
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className="cursor-pointer p-1 hover:bg-gray-600 rounded-full"
@@ -190,7 +310,7 @@ const ChatContainer = ({ onToggleRightSidebar }) => {
           <input
             onChange={(e) => setInput(e.target.value)}
             value={input}
-            onKeyDown={(e) => (e.key === "Enter" ? handleSendMessage(e) : null)}
+            onKeyDown={(e) => (e.key === 'Enter' ? handleSendMessage(e) : null)}
             type="text"
             placeholder="Type your message..."
             className="flex-1 bg-transparent border-none outline-none text-white text-sm placeholder-gray-400 w-full"
