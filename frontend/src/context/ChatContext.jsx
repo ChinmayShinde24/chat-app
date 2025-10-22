@@ -8,7 +8,10 @@ export const ChatProvider = ({ children }) => {
   const [message, setMessage] = useState(() => []);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
   const [unseenMessages, setUnseenMessages] = useState({});
+  //State to get the group
+  const [groups, setGroups] = useState([])
 
   const { socket, axios } = useContext(AuthContext);
 
@@ -37,6 +40,19 @@ export const ChatProvider = ({ children }) => {
       }
     } catch (err) {
       console.log('Error while getting messages : ', err);
+      toast.error(err.message);
+    }
+  };
+
+  //Function to get group messages
+  const getGroupMessages = async (groupId) => {
+    try {
+      const { data } = await axios.get(`/api/group/${groupId}/messages`);
+      if (data.success) {
+        setMessage(data.messages);
+      }
+    } catch (err) {
+      console.log('Error while getting group messages : ', err);
       toast.error(err.message);
     }
   };
@@ -134,35 +150,127 @@ export const ChatProvider = ({ children }) => {
   const deleteMessageForAll = async (messageId) => {
     try {
       const { data } = await axios.delete(`api/messages/delete/all/${messageId}`);
-      console.log('Data while deleting message for all:', data);
       if (data.success) {
-        setMessage((prev) => 
-          prev.map((msg) => 
-            msg._id === messageId 
-              ? { ...msg, text: 'This message has been deleted', image: null, isDeleted: true }
-              : msg
-          )
-        );
+        // Don't update local state here - socket will handle real-time updates for all users
+        toast.success('Message deleted for everyone');
         return { success: true };
       }
     } catch (error) {
       console.error('Error deleting message for all:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete message for everyone');
       throw new Error(error.response?.data?.message || 'Failed to delete message for everyone');
     }
   };
+
+  //get user group
+  const getGroups = async() => {
+    try{
+      const {data} = await axios.get('/api/group')
+      if(data.success){
+        setGroups(data.groups)
+      } else {
+        toast.error(data.message || "Failed to fetch group")
+      }
+
+    }catch(error){
+      console.log('Error to fetch group name :',message.error)
+      toast.error(error.response?.data?.message || error.message)
+    }
+  }
+
+  useEffect(()=>{
+    getUsers();
+    getGroups();
+  },[])
+
+  //send message in group
+  const sendGroupMessage = async (messageData) => {
+    try {
+      const group = groups.find(g => g._id === selectedGroup._id);
+      const { data } = await axios.post("/api/group/send-message", { 
+        groupId: selectedGroup._id, 
+        text: messageData.text,
+        image: messageData.image 
+      });
+
+      if (data.success) {
+        // Don't add to local state - socket will handle real-time updates for all users including sender
+        // setMessage((prevMessages) => {
+        //   const currentMessages = Array.isArray(prevMessages) ? prevMessages : [];
+        //   return [...currentMessages, data.message];
+        // });
+
+        // emit socket event
+        socket.emit("sendGroupMessage", {
+          groupId: selectedGroup._id,
+          message: data.message,
+          members: group.members.map(m => m._id)
+        });
+      }
+    } catch (err) {
+      console.log('Error while sending group message : ', err);
+      toast.error(err.message);
+    }
+  };
+
+// subscribe to group messages
+useEffect(() => {
+  if (!socket) return;
+
+  const handleGroupMessage = ({ groupId, message }) => {
+    // If we're currently viewing this group, add message to current messages
+    if (selectedGroup && selectedGroup._id === groupId) {
+      setMessage((prevMessages) => {
+        // Check if message already exists (to prevent duplicates)
+        const messageExists = prevMessages.some(existingMsg => existingMsg._id === message._id);
+        if (messageExists) {
+          return prevMessages;
+        }
+        return [...prevMessages, message];
+      });
+    }
+
+    // Also update the groups state for sidebar notifications
+    setGroups(prevGroups => prevGroups.map(g => g._id === groupId
+      ? {
+          ...g,
+          messages: (() => {
+            // Check if message already exists in groups state
+            const existingMessages = g.messages || [];
+            const messageExists = existingMessages.some(existingMsg => existingMsg._id === message._id);
+            if (messageExists) {
+              return existingMessages;
+            }
+            return [...existingMessages, message];
+          })()
+        }
+      : g));
+  };
+
+  socket.on("group:message", handleGroupMessage);
+
+  return () => socket.off("group:message", handleGroupMessage);
+}, [socket, selectedGroup]);
+
 
   const value = {
     message,
     users,
     selectedUser,
+    selectedGroup,
     getUsers,
     getMessages,
+    getGroupMessages,
     sendMessage,
+    sendGroupMessage,
     setSelectedUser,
+    setSelectedGroup,
     unseenMessages,
     setUnseenMessages,
     deleteMessageForMe,
     deleteMessageForAll,
+    groups,
+    setGroups
   };
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };

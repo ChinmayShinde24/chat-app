@@ -1,5 +1,6 @@
-import Message from "../models/Message.model.js";
+import { Message } from "../models/Message.model.js";
 import User from "../models/Users.model.js";
+import { Group } from "../models/Group.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { io, userSocketMap } from "../server.js";
 
@@ -139,22 +140,43 @@ export const deleteForAll = async(req,res) => {
     const message = await Message.findById(id)
     if(!message) return res.json({status:404, message:'Message does not exist'})
 
+    // Check if user is the sender of the message
+    if (message.senderId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'You can only delete your own messages' })
+    }
+
     message.text = 'This message is deleted'
     message.image = null
     message.deletedForAll = true
     await message.save()
-    const receiverId = message.receiverId
-    const senderSocketId = message.senderId
-    const receiverSocketId = userSocketMap[receiverId]
 
-    if (senderSocketId) io.to(senderSocketId).emit("messageDeletedForAll", message);
-    if (receiverSocketId) io.to(receiverSocketId).emit("messageDeletedForAll", message);
+    // Check if it's a group message or individual message
+    if (message.groupId) {
+      // Group message - emit to all group members
+      const group = await Group.findById(message.groupId).select('members')
+      if (group) {
+        group.members.forEach(memberId => {
+          const memberSocketId = userSocketMap[memberId.toString()]
+          if (memberSocketId) {
+            io.to(memberSocketId).emit("messageDeletedForAll", message);
+          }
+        })
+      }
+    } else {
+      // Individual message - emit to sender and receiver
+      const receiverId = message.receiverId
+      const senderSocketId = userSocketMap[message.senderId.toString()]
+      const receiverSocketId = userSocketMap[receiverId.toString()]
 
-    res.json({success:true,message:'Message deleted for everyone :', data:message})
+      if (senderSocketId) io.to(senderSocketId).emit("messageDeletedForAll", message);
+      if (receiverSocketId) io.to(receiverSocketId).emit("messageDeletedForAll", message);
+    }
+
+    res.json({success:true,message:'Message deleted for everyone', data:message})
 
   }catch(error){
-    console.log('Errror while deleting the messagw from all the users :', error)
-    return res.json({status:false, message:error.message})
+    console.log('Error while deleting the message from all users :', error)
+    return res.json({success:false, message:error.message})
   }
 }
 

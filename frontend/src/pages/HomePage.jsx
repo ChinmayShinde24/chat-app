@@ -6,7 +6,8 @@ import { useContext } from "react";
 import { ChatContext } from "../context/ChatContext";
 
 const Homepage = () => {
-  const { selectedUser } = useContext(ChatContext);
+  const { selectedUser, selectedGroup } = useContext(ChatContext);
+  const hasChatOpen = selectedUser || selectedGroup;
   const [showRightSidebar, setShowRightSidebar] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -44,23 +45,18 @@ const Homepage = () => {
     <div className="w-full h-screen bg-[#0f0f1a] overflow-hidden">
       <div className="w-full h-full flex">
         {/* Left Sidebar - Always visible */}
-        <div
-          className={`${
-            selectedUser
-              ? "hidden md:block md:w-1/3 lg:w-1/4"
-              : "w-full md:w-1/2"
-          }`}
-        >
+        {/* Left Sidebar - Hidden when chat is open on mobile, visible on desktop */}
+        <div className={`${hasChatOpen ? 'hidden md:block md:w-1/3 lg:w-1/4' : 'w-full md:w-1/2'}`}>
           <Sidebar />
         </div>
 
-        {/* Chat Container - Takes remaining space */}
-        <div className={`flex-1 ${!selectedUser ? "hidden md:block" : ""}`}>
+        {/* Chat Container - Takes full width when chat is open */}
+        <div className={`${hasChatOpen ? 'w-full md:flex-1' : 'hidden md:block'}`}>
           <ChatContainer onToggleRightSidebar={toggleRightSidebar} />
         </div>
 
         {/* Right Sidebar - Conditionally rendered */}
-        {selectedUser && (
+        {/* {selectedUser && (
           <div
             className={`${
               isMobile ? "fixed inset-0 z-50" : "relative w-1/3 lg:w-1/4"
@@ -71,7 +67,7 @@ const Homepage = () => {
               onClose={closeRightSidebar}
             />
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
