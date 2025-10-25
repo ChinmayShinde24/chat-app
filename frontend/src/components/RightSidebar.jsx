@@ -66,21 +66,30 @@ const RightSidebar = ({ isOpen, onClose, group }) => {
 
       {currentChat && (
         <div className="pt-16 flex flex-col items-center gap-2 text-xs font-light mx-auto px-4">
-          <img
-            src={currentChat?.profilePic || currentChat?.groupImage || assets.avatar_icon}
-            alt=""
-            className="w-20 aspect-[1/1] rounded-full object-cover"
-          />
+          {
+            isGroup ? (
+              currentChat?.groupAvatar ? (
+                <img
+                  src={currentChat.groupAvatar}
+                  alt=""
+                  className="w-20 aspect-[1/1] rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+                  {currentChat?.groupName?.charAt(0)?.toUpperCase()}
+                </div>
+              )
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold">
+                {currentChat?.groupName?.charAt(0)?.toUpperCase()}
+              </div>
+            )
+          }
           <h1 className="px-10 text-xl font-medium mx-auto flex items-center gap-2">
             {!isGroup && currentChat?._id && onlineUser.includes(currentChat._id) && (
               <span className="w-2 h-2 rounded-full bg-green-500"></span>
             )}
-            {currentChat?.fullName || currentChat?.name || 'Unknown User'}
-            {isGroup && (
-              <span className="text-xs text-gray-400 ml-2">
-                {currentChat.members?.length || 0} members
-              </span>
-            )}
+            {currentChat?.groupName}
           </h1>
           {currentChat?.bio && (
             <p className="px-8 mx-auto text-center text-gray-300">
@@ -121,7 +130,7 @@ const RightSidebar = ({ isOpen, onClose, group }) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium truncate">{member?.fullName || 'Unknown User'}</span>
-                          {member?.isAdmin && (
+                          {currentChat?.admin?._id === member?._id &&(
                             <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full whitespace-nowrap">
                               Admin
                             </span>

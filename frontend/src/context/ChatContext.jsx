@@ -13,11 +13,13 @@ export const ChatProvider = ({ children }) => {
   //State to get the group
   const [groups, setGroups] = useState([])
 
-  const { socket, axios } = useContext(AuthContext);
+  const { socket, axios, authUser } = useContext(AuthContext);
 
   //function to get all the users from sidebar
 
   const getUsers = async () => {
+    if (!authUser) return;
+
     try {
       const { data } = await axios.get('api/messages/users');
       if (data.success) {
@@ -60,6 +62,8 @@ export const ChatProvider = ({ children }) => {
   //Function to send the message to the user
 
   const sendMessage = async (messageData) => {
+    if (!authUser || !selectedUser) return;
+
     try {
       const { data } = await axios.post(
         `api/messages/send/${selectedUser._id}`,
@@ -108,9 +112,11 @@ export const ChatProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    subscribeToMessages();
-    return () => unSubscribeFromMessage();
-  }, [socket, selectedUser]);
+    if (authUser) {
+      subscribeToMessages();
+      return () => unSubscribeFromMessage();
+    }
+  }, [socket, selectedUser, authUser]);
 
   //delete for me 
   const deleteMessageForMe = async (messageId) => {
@@ -129,7 +135,7 @@ export const ChatProvider = ({ children }) => {
 
   // Delete for everyone
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !authUser) return;
   
     socket.on("messageDeletedForAll", (deletedMessage) => {
       setMessage((prev) =>
@@ -145,7 +151,7 @@ export const ChatProvider = ({ children }) => {
     return () => {
       socket.off("messageDeletedForAll");
     };
-  }, [socket]);
+  }, [socket, authUser]);
  
   const deleteMessageForAll = async (messageId) => {
     try {
@@ -164,6 +170,8 @@ export const ChatProvider = ({ children }) => {
 
   //get user group
   const getGroups = async() => {
+    if (!authUser) return;
+
     try{
       const {data} = await axios.get('/api/group')
       if(data.success){
@@ -179,12 +187,16 @@ export const ChatProvider = ({ children }) => {
   }
 
   useEffect(()=>{
-    getUsers();
-    getGroups();
-  },[])
+    if (authUser) {
+      getUsers();
+      getGroups();
+    }
+  },[authUser])
 
   //send message in group
   const sendGroupMessage = async (messageData) => {
+    if (!authUser || !selectedGroup) return;
+
     try {
       const group = groups.find(g => g._id === selectedGroup._id);
       const { data } = await axios.post("/api/group/send-message", { 
@@ -215,7 +227,7 @@ export const ChatProvider = ({ children }) => {
 
 // subscribe to group messages
 useEffect(() => {
-  if (!socket) return;
+  if (!socket || !authUser) return;
 
   const handleGroupMessage = ({ groupId, message }) => {
     // If we're currently viewing this group, add message to current messages
@@ -250,7 +262,7 @@ useEffect(() => {
   socket.on("group:message", handleGroupMessage);
 
   return () => socket.off("group:message", handleGroupMessage);
-}, [socket, selectedGroup]);
+}, [socket, selectedGroup, authUser]);
 
 
   const value = {

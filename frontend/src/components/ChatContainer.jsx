@@ -159,12 +159,42 @@
         {/* Chat Header */}
         <div className="flex items-center justify-between py-3 px-4 border-b border-stone-500">
           <div className="flex items-center gap-3">
-            <img
-              src={currentChat?.profilePic || currentChat?.groupImage || assets.avatar_icon}
-              alt=""
-              className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setShowRightSidebar(true)}
-            />
+            <div className="flex-shrink-0">
+              {isGroup ? (
+                currentChat?.groupAvatar ? (
+                  <img
+                    src={currentChat.groupAvatar}
+                    alt=""
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setShowRightSidebar(true)}
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setShowRightSidebar(true)}
+                  >
+                    {currentChat?.groupName?.charAt(0)?.toUpperCase()}
+                  </div>
+                )
+              ) : (
+                currentChat?.profilePic ? (
+                  <img
+                    src={currentChat.profilePic}
+                    alt=""
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setShowRightSidebar(true)}
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setShowRightSidebar(true)}
+                  >
+                    {currentChat?.fullName?.charAt(0)?.toUpperCase()}
+                  </div>
+                )
+              )}
+            </div>
+            {console.log('Current chat :',currentChat)}
             {showRightSidebar && (
               <RightSidebar
                 isOpen={showRightSidebar}
@@ -174,14 +204,9 @@
               />
             )}
             <p className="flex items-center gap-2 text-white text-lg">
-              {isGroup ? currentChat.name : currentChat.fullName}
+              {isGroup ? currentChat?.groupName : currentChat?.fullName}
               {!isGroup && onlineUser.includes(currentChat._id) && (
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              )}
-              {isGroup && (
-                <span className="text-sm text-gray-400">
-                  ({currentChat.members?.length} members)
-                </span>
               )}
             </p>
           </div>
@@ -244,15 +269,31 @@
                   {/* Avatar - Only show for received messages */}
                   {!isCurrentUser && (
                     <div className="flex-shrink-0">
-                      <img
-                        src={
-                          isGroup
-                            ? (msg.senderId?.profilePic || assets.avatar_icon)
-                            : (currentChat?.profilePic || assets.avatar_icon)
-                        }
-                        alt=""
-                        className="rounded-full w-8 h-8 mt-1"
-                      />
+                      {isGroup ? (
+                        msg.senderId?.profilePic ? (
+                          <img
+                            src={msg.senderId.profilePic}
+                            alt=""
+                            className="rounded-full w-8 h-8 mt-1"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold mt-1">
+                            {msg.senderId?.fullName?.charAt(0)?.toUpperCase()}
+                          </div>
+                        )
+                      ) : (
+                        currentChat?.profilePic ? (
+                          <img
+                            src={currentChat.profilePic}
+                            alt=""
+                            className="rounded-full w-8 h-8 mt-1"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold mt-1">
+                            {currentChat?.fullName?.charAt(0)?.toUpperCase()}
+                          </div>
+                        )
+                      )}
                     </div>
                   )}
 
@@ -339,11 +380,17 @@
                   {/* Avatar - Only show for sent messages */}
                   {isCurrentUser && (
                     <div className="flex-shrink-0">
-                      <img
-                        src={authUser?.profilePic || assets.avatar_icon}
-                        alt=""
-                        className="rounded-full w-8 h-8 mt-1"
-                      />
+                      {authUser?.profilePic ? (
+                        <img
+                          src={authUser.profilePic}
+                          alt=""
+                          className="rounded-full w-8 h-8 mt-1"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold mt-1">
+                          {authUser?.fullName?.charAt(0)?.toUpperCase()}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -424,7 +471,7 @@
         </div>
       </div>
     ) : (
-      <div className="flex flex-col items-center justify-center gap-2 text-gray-500 bg-white/10 max-md:hidden">
+      <div className="flex flex-col items-center justify-center gap-2 text-gray-500  max-md:hidden">
         <img src={assets.logo_icon} alt="" className="max-w-16" />
         <p className="text-lg font-medium text-white">Chat anytime,Anywhere</p>
       </div>

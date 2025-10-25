@@ -109,10 +109,19 @@ const Sidebar = () => {
                   }`}
                 >
                   <div className="w-10 h-10 rounded-lg bg-[#4F46E5]/20 flex items-center justify-center mr-3">
-                    <span className="text-white font-medium">
-                      {(group.name || group.groupName)?.charAt(0)?.toUpperCase()}
-                    </span>
-                  </div>
+                  {
+                    group.groupAvatar ? (
+                      <img
+                        src={group.groupAvatar}
+                        alt={group.groupName}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <span className="text-white font-medium">
+                        {(group.groupName)?.charAt(0)?.toUpperCase()}
+                      </span>
+                    )
+                  }</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">
                       {group.name || group.groupName}

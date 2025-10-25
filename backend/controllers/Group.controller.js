@@ -20,11 +20,11 @@ export const createGroup = async(req,res)=>{
         //group dp
         let groupAvatar = null;
         if(req.body.groupAvatar){
-            const groupAvatar = await cloudinary.uploader.upload(req.body.groupAvatar,{
+            const uploaded  = await cloudinary.uploader.upload(req.body.groupAvatar,{
                 folder : "group_avatars"
             });
             groupAvatar = uploaded.secure_url
-        }
+        }[]
 
         //Include admin as a member
         const membersId = [...new Set([...members,groupAdmin.toString()])]
@@ -45,7 +45,7 @@ export const createGroup = async(req,res)=>{
 
     } catch (error) {
         console.log('Error while creating a group : ',error)
-        res.status({success : false, message : error.message})
+        res.status(500).json({success : false, message : error.message})
     }   
 }
 
