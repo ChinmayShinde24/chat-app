@@ -70,50 +70,62 @@ export const createGroup = async(req,res)=>{
 };
 
 
-  export const addMember = async (req, res) => {
-    try {
-      const { groupId, memberId } = req.body;
-      const userId = req.user._id;
-  
-      const group = await Group.findById(groupId);
-      if (!group) return res.status(404).json({ success: false, message: "Group not found" });
-  
-      if (group.admin.toString() !== userId.toString()) {
-        return res.status(403).json({ success: false, message: "Only admin can add members" });
-      }
-  
-      if (group.members.includes(memberId)) {
-        return res.status(400).json({ success: false, message: "User already in group" });
-      }
-  
-      group.members.push(memberId);
-      await group.save();
-  
-      res.json({ success: true, message: "Member added successfully", group });
-    } catch (error) {
-      console.error("Error adding member:", error);
-      res.status(500).json({ success: false, message: error.message });
+ export const addMember = async (req, res) => {
+  try {
+    const { groupId } = req.params; 
+    const { userId } = req.body;    
+    const adminId = req.user._id;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "userId is required" });
     }
-  };
+
+    const group = await Group.findById(groupId);
+    if (!group)
+      return res.status(404).json({ success: false, message: "Group not found" });
+
+    if (group.admin.toString() !== adminId.toString()) {
+      return res.status(403).json({ success: false, message: "Only admin can add members" });
+    }
+
+    if (group.members.includes(userId)) {
+      return res.status(400).json({ success: false, message: "User already in group" });
+    }
+
+    group.members.push(userId);
+    await group.save();
+
+    await group.populate("members", "fullName profilePic email");
+    res.json({ success: true, message: "Member added successfully", group });
+  } catch (error) {
+    console.error("Error adding member:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
   
   export const removeMember = async (req, res) => {
     try {
-      const { groupId, memberId } = req.body;
-      const userId = req.user._id;
+      const {groupId} = req.params
+      const {userId} = req.body
+      const adminId = req.user._id
   
       const group = await Group.findById(groupId);
       if (!group) return res.status(404).json({ success: false, message: "Group not found" });
   
-      if (group.admin.toString() !== userId.toString()) {
+      if (group.admin.toString() !== adminId.toString()) {
         return res.status(403).json({ success: false, message: "Only admin can remove members" });
       }
+
+      if (!group.members.includes(userId))
+      return res.status(400).json({ success: false, message: "User not in group" });
   
       group.members = group.members.filter(
-        (id) => id.toString() !== memberId.toString()
+        (id) => id.toString() !== userId.toString()
       );
       await group.save();
-  
+
+      await group.populate("members", "fullName profilePic email");
       res.json({ success: true, message: "Member removed successfully", group });
     } catch (error) {
       console.error("Error removing member:", error);

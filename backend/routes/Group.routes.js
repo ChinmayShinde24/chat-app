@@ -30,14 +30,14 @@ router.get("/", protactedRoute, getUserGroups);
  * @desc    Add member to a group (admin only)
  * @access  Private
  */
-router.put("/add-member", protactedRoute, addMember);
+router.patch("/:groupId/add-member", protactedRoute, addMember);
 
 /**
  * @route   PUT /api/groups/remove-member
  * @desc    Remove member from a group (admin only)
  * @access  Private
  */
-router.put("/remove-member", protactedRoute, removeMember);
+router.put("/:groupId/remove-member", protactedRoute, removeMember);
 
 /**
  * @route   POST /api/groups/send-message
