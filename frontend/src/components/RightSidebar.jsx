@@ -2,6 +2,9 @@ import React, { useEffect, useState, useContext } from "react";
 import { ChatContext } from "../context/ChatContext";
 import { AuthContext } from "../context/AuthContext";
 import assets from "../assets/assets";
+import AddMembers from "./AddMembers";
+import { MdPersonAdd } from "react-icons/md";
+import RemoveMember from "./RemoveMember";
 
 const RightSidebar = ({ isOpen, onClose, group }) => {
   const { selectedUser, message } = useContext(ChatContext);
@@ -102,10 +105,16 @@ const RightSidebar = ({ isOpen, onClose, group }) => {
       {isGroup && currentChat?.members && (
         <div className="w-full max-w-2xl mx-auto mt-6">
           <div className="bg-[#2a2b3c] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Group Members</h2>
-              <div className="text-gray-400 text-sm">
-                {participants?.length || 0} {participants?.length === 1 ? 'member' : 'members'}
+            <div className="flex flex-col items-center mb-6">
+              <div className="flex justify-between w-full">
+                <h2 className="text-xl font-semibold">Group Members</h2>
+                <div className="text-gray-400 text-sm">
+                  {participants?.length || 0} {participants?.length === 1 ? 'member' : 'members'}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <MdPersonAdd />
+                <AddMembers group={currentChat}/>
               </div>
             </div>
             
@@ -128,13 +137,16 @@ const RightSidebar = ({ isOpen, onClose, group }) => {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" style={{justifyContent:"space-between"}}>
                           <span className="font-medium truncate">{member?.fullName || 'Unknown User'}</span>
-                          {currentChat?.admin?._id === member?._id &&(
+                              {currentChat?.admin?._id === member?._id &&(
                             <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full whitespace-nowrap">
                               Admin
                             </span>
                           )}
+                          <div>
+                            <RemoveMember member={member} groupId={currentChat._id}/>
+                          </div>
                         </div>
                         <p className="text-xs text-gray-400">
                           {member?._id && onlineUser.includes(member._id) ? 'Active now' : 'Offline'}

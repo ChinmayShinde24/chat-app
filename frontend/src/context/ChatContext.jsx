@@ -264,6 +264,37 @@ useEffect(() => {
   return () => socket.off("group:message", handleGroupMessage);
 }, [socket, selectedGroup, authUser]);
 
+ //Add user in group
+const addMemberToGroup = async (groupId, userId) => {
+  try {
+    const { data } = await axios.patch(`/api/group/${groupId}/add-member`, { userId });
+    toast.success("Member added successfully!");
+    // refresh group in state if needed
+    setGroups(prev => prev.map(g => g._id === data.group._id ? data.group : g));
+    return data.group;
+  } catch (err) {
+    if (err.response?.status === 400) {
+      toast.error(err.response.data.message || "User already exists in this group");
+    } else {
+      toast.error("Only admin can add");
+    }
+  }
+};
+
+ //Remove user
+ const removeUserFromGroup = async (groupId, userId) => {
+  try{
+    const {data} = await axios.put(`/api/group/${groupId}/remove-member`,{userId})
+    toast.success('Member removed sucessfully')
+    setGroups(prev => prev.map(g => g._id === data.group._id ? data.group : g))
+  }catch(err){
+    if (err.response?.status === 400) {
+      toast.error(err.response.data.message || "User already exists in this group");
+    } else {
+      toast.error("Only admin can remove");
+    }
+  }
+ }
 
   const value = {
     message,
@@ -282,7 +313,9 @@ useEffect(() => {
     deleteMessageForMe,
     deleteMessageForAll,
     groups,
-    setGroups
+    setGroups,
+    addMemberToGroup,
+    removeUserFromGroup
   };
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
